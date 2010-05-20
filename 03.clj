@@ -80,5 +80,17 @@
 (defn delete [selector]
   (dosync (ref-set *db* (remove #(selector %) (deref *db*)))))
 
-;(defn make-comparison-expr (field clause value)
-;  `(= (~field ~clause) (~field ~value)))
+(defmacro make-comparison-expr [field clause value]
+  `(= (~field ~clause) (~field ~value)))
+
+(defn make-comparisons-list [fields]
+  (loop [f fields comparisons ()]
+    (let [field (first f) clause (second f) value (second (rest f))]
+      (if (not-empty f)
+	(do
+	  (recur
+	   (rest (rest (rest f)))
+	   (conj 
+	    comparisons
+	    (make-comparison-expr field clause value))))
+	comparisons))))
