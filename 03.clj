@@ -78,4 +78,7 @@
      (deref *db*)))))
 
 (defn delete [selector]
-  (dosync (alter *db* (filter selector (deref *db*)))))
+  (dosync (ref-set *db* (remove #(selector %) (deref *db*)))))
+
+;(defn make-comparison-expr (field clause value)
+;  `(= (~field ~clause) (~field ~value)))
