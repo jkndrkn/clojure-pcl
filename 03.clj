@@ -1,3 +1,9 @@
+;;;; A translation of Practical Common Lisp Chapter 3 from Common Lisp to Clojure
+;;;; http://www.gigamonkeys.com/book/practical-a-simple-database.html
+;;;;
+;;;; John David Eriksen
+;;;; jkndrkn@gmail.com
+
 (ns pcl-03
   (:use clojure.contrib.duck-streams))
 
@@ -50,9 +56,6 @@
 (defn load-db [filename]
   (dosync (ref-set *db* (read-string (slurp filename)))))
 
-(defn select-by-artist [artist]
-  (filter #(= artist (:artist %)) (deref *db*)))
-
 (defn select [selector]
   (filter selector (deref *db*)))
 
@@ -80,17 +83,13 @@
 (defn delete [selector]
   (dosync (ref-set *db* (remove #(selector %) (deref *db*)))))
 
-(defmacro make-comparison-expr [field clause value]
-  `(= (~field ~clause) (~field ~value)))
+(defn make-comparison-expr [field clause]
+  `(= (~field ~clause) (~field ~'value)))
 
-(defn make-comparisons-list [fields]
-  (loop [f fields comparisons ()]
-    (let [field (first f) clause (second f) value (second (rest f))]
-      (if (not-empty f)
-	(do
-	  (recur
-	   (rest (rest (rest f)))
-	   (conj 
-	    comparisons
-	    (make-comparison-expr field clause value))))
-	comparisons))))
+(defn make-comparisons-list [clauses]
+  (for [[f v] clauses]
+    (let [clause (hash-map f v)]
+      (make-comparison-expr f clause))))
+
+(defmacro where-macro [clauses]
+  `(fn [~'value] (and ~@(make-comparisons-list clauses))))
